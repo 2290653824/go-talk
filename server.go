@@ -5,6 +5,7 @@ import (
 	"io"
 	"net"
 	"sync"
+	"time"
 )
 
 type Server struct {
@@ -34,9 +35,10 @@ func (this *Server) doHandler(connection net.Conn) {
 	fmt.Println("start to exec handler,this conn:", connection)
 	user := NewUser(connection, this)
 	user.online()
-
+	isLive := make(chan bool)
 	go func() {
 		buf := make([]byte, 4069)
+
 		for {
 			n, err := connection.Read(buf)
 			if n == 0 { //当读到为0时，表示客户端已经关闭了
@@ -53,10 +55,24 @@ func (this *Server) doHandler(connection net.Conn) {
 
 			user.doMessage(msg)
 
+			isLive <- true //用户活跃
+
 		}
 	}()
 	//阻塞
-	select {}
+	for {
+		select {
+		case <-isLive:
+
+		case <-time.After(time.Second * 10):
+			user.sendSingleUsr("you have terminated because of expiration")
+			close(user.c)
+			user.conn.Close()
+			return
+
+		}
+	}
+
 }
 
 // 将广播信息发送到channel当中，另一个协成会去channel中拿数据

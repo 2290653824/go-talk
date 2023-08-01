@@ -31,7 +31,18 @@ func (this *User) offline() {
 
 // 用户处理消息
 func (this *User) doMessage(msg string) {
-	this.server.BroadMessage(this, msg)
+	if msg == "who" {
+		for _, user := range this.server.onlineMap {
+			msg := "[user id = " + user.id + ", user addr = " + user.addr + ",username = " + user.userName + "] exist"
+			this.sendSingleUsr(msg)
+		}
+	} else if len(msg) > 7 && msg[:7] == "rename|" {
+		newName := msg[7:]
+		this.userName = newName
+		this.sendSingleUsr("your username has reset:" + newName)
+	} else {
+		this.server.BroadMessage(this, msg)
+	}
 }
 
 func NewUser(conn net.Conn, server *Server) *User {
@@ -56,13 +67,6 @@ func (this *User) listenMessage() {
 	for {
 
 		msg := <-this.c //从管道中读取数据
-		if msg == "who" {
-			for _, user := range this.server.onlineMap {
-				msg := "[user id = " + user.id + ", user addr = " + user.addr + "]"
-				this.sendSingleUsr(msg)
-			}
-		} else {
-			this.conn.Write([]byte(msg + "\n"))
-		}
+		this.conn.Write([]byte(msg + "\n"))
 	}
 }
