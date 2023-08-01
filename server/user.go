@@ -37,7 +37,7 @@ func (this *User) offline() {
 func (this *User) doMessage(msg string) {
 	if msg == "who" { //指令who
 		for _, user := range this.server.onlineMap {
-			msg := "[user id = " + user.id + ", user addr = " + user.addr + ",username = " + user.userName + "] exist"
+			msg := "[user id = " + user.id + ", user addr = " + user.addr + ",username = " + user.userName + "] exist\n"
 			this.sendSingleUsr(msg)
 		}
 	} else if len(msg) > 7 && msg[:7] == "rename|" { //指令 rename|newName
