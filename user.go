@@ -10,18 +10,17 @@ type User struct {
 	conn     net.Conn
 }
 
-func NewUser(userName string, conn net.Conn) *User {
+func NewUser(conn net.Conn) *User {
 	addr := conn.RemoteAddr().String()
 	user := &User{
 		addr,
-		userName,
+		addr,
 		addr,
 		make(chan string), //创建一个管道，没有缓冲区
 		conn,
 	}
 	go user.listenMessage()
 	return user
-
 }
 
 func (this *User) listenMessage() {
