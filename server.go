@@ -64,7 +64,7 @@ func (this *Server) doHandler(connection net.Conn) {
 		select {
 		case <-isLive:
 
-		case <-time.After(time.Second * 10):
+		case <-time.After(time.Second * 1000):
 			user.sendSingleUsr("you have terminated because of expiration")
 			close(user.c)
 			user.conn.Close()

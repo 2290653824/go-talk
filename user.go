@@ -1,6 +1,10 @@
 package main
 
-import "net"
+import (
+	"fmt"
+	"net"
+	"strings"
+)
 
 type User struct {
 	id       string
@@ -31,15 +35,29 @@ func (this *User) offline() {
 
 // 用户处理消息
 func (this *User) doMessage(msg string) {
-	if msg == "who" {
+	if msg == "who" { //指令who
 		for _, user := range this.server.onlineMap {
 			msg := "[user id = " + user.id + ", user addr = " + user.addr + ",username = " + user.userName + "] exist"
 			this.sendSingleUsr(msg)
 		}
-	} else if len(msg) > 7 && msg[:7] == "rename|" {
+	} else if len(msg) > 7 && msg[:7] == "rename|" { //指令 rename|newName
 		newName := msg[7:]
 		this.userName = newName
 		this.sendSingleUsr("your username has reset:" + newName)
+	} else if len(msg) > 3 && msg[:3] == "to|" {
+		arr := strings.Split(msg, "|")
+		id := arr[1]
+		talkMessage := arr[2]
+		if id == "" {
+			fmt.Println("the id is not validate")
+		}
+		user := this.server.onlineMap[id]
+		if user == nil {
+			fmt.Println("the id is not existed in onlineMap")
+		}
+		message := "userid[" + this.id + "],username=[" + this.userName + "] send message to you:" + talkMessage
+		user.sendSingleUsr(message)
+
 	} else {
 		this.server.BroadMessage(this, msg)
 	}
