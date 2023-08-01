@@ -48,9 +48,21 @@ func NewUser(conn net.Conn, server *Server) *User {
 	return user
 }
 
+func (this *User) sendSingleUsr(msg string) {
+	this.conn.Write([]byte(msg))
+}
+
 func (this *User) listenMessage() {
 	for {
+
 		msg := <-this.c //从管道中读取数据
-		this.conn.Write([]byte(msg + "\n"))
+		if msg == "who" {
+			for _, user := range this.server.onlineMap {
+				msg := "[user id = " + user.id + ", user addr = " + user.addr + "]"
+				this.sendSingleUsr(msg)
+			}
+		} else {
+			this.conn.Write([]byte(msg + "\n"))
+		}
 	}
 }
