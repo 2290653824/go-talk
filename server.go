@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"io"
 	"net"
 	"sync"
 )
@@ -31,20 +32,36 @@ func NewServer(ip string, port int) *Server {
 
 func (this *Server) doHandler(connection net.Conn) {
 	fmt.Println("start to exec handler,this conn:", connection)
-	user := NewUser(connection)
-	this.mapLock.Lock()
-	this.onlineMap[user.id] = user
-	this.mapLock.Unlock()
+	user := NewUser(connection, this)
+	user.online()
 
-	this.BroadMessage(user, "已经上线") //广播消息
+	go func() {
+		buf := make([]byte, 4069)
+		for {
+			n, err := connection.Read(buf)
+			if n == 0 { //当读到为0时，表示客户端已经关闭了
+				user.offline()
+				return
+			}
 
+			if err != nil && err != io.EOF {
+				fmt.Println("Conn Read err :", err)
+				return
+			}
+
+			msg := string(buf[:n-1])
+
+			user.doMessage(msg)
+
+		}
+	}()
 	//阻塞
 	select {}
 }
 
 // 将广播信息发送到channel当中，另一个协成会去channel中拿数据
 func (this *Server) BroadMessage(user *User, msg string) {
-	res := "user id = " + user.id + ",userName = " + user.userName + ":" + msg
+	res := "[" + "user id = " + user.id + ",userName = " + user.userName + "]" + ":" + msg
 	this.message <- res
 }
 
@@ -77,7 +94,7 @@ func (this *Server) Start() {
 		}
 
 		//do handler
-		this.doHandler(connection)
+		go this.doHandler(connection)
 	}
 
 	//close
